@@ -1,0 +1,55 @@
+# AcademicHub: frontend (Nginx) + backend (Node/Express) + base de datos (PostgreSQL)
+# Uso:  cp .env.example .env   y luego   docker compose up --build
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: academichub-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Scripts que se ejecutan solo la primera vez (cuando el volumen está vacío).
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    ports:
+      # Solo accesible desde tu computador (para pgAdmin, DBeaver, etc.).
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: academichub-backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      # "db" es el nombre del servicio: Docker lo resuelve dentro de la red interna.
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      DEMO_EMAIL: ${DEMO_EMAIL}
+      DEMO_PASSWORD: ${DEMO_PASSWORD}
+      DEMO_NAME: ${DEMO_NAME:-Estudiante}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: academichub-frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db_data:

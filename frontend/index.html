@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AcademicHub | Panel principal</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dashboard-page">
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="brand-small"><span class="brand-icon">🎓</span><span>AcademicHub</span></div>
+      <nav class="sidebar-nav" aria-label="Navegación principal">
+        <button class="nav-link active" data-view="dashboard"><span>▦</span> Panel principal</button>
+        <button class="nav-link" data-view="activities"><span>☑</span> Todas las actividades</button>
+        <button class="nav-link" data-view="subjects"><span>▤</span> Materias</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <p>Organiza. Avanza. Aprende.</p>
+        <button id="logoutButton" class="logout-button">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">TU ESPACIO ACADÉMICO</p>
+          <h1 id="pageTitle">Panel principal</h1>
+          <p id="pageSubtitle">Consulta tus pendientes y organiza tus próximas entregas.</p>
+        </div>
+        <div class="user-pill"><span class="avatar">E</span><span id="userEmail">Estudiante</span></div>
+      </header>
+
+      <p id="appError" class="app-error" role="alert" hidden></p>
+
+      <section id="dashboardView" class="view active">
+        <div class="welcome-banner">
+          <div>
+            <p class="banner-kicker">¡Hola, estudiante!</p>
+            <h2>Un paso a la vez. Vas por buen camino.</h2>
+            <p>Ten tus tareas, evaluaciones y exposiciones bajo control.</p>
+          </div>
+          <div class="banner-emoji">📚</div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-icon blue">☑</div><p>Actividades pendientes</p><strong id="pendingCount">0</strong><span>Por completar</span></article>
+          <article class="stat-card"><div class="stat-icon purple">◷</div><p>Próximas entregas</p><strong id="upcomingCount">0</strong><span>En los próximos 7 días</span></article>
+          <article class="stat-card"><div class="stat-icon green">✓</div><p>Completadas</p><strong id="completedCount">0</strong><span>Buen trabajo</span></article>
+          <article class="stat-card"><div class="stat-icon orange">▤</div><p>Materias</p><strong id="subjectCount">0</strong><span>En tu lista académica</span></article>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="panel countdown-panel">
+            <div class="panel-heading"><div><p class="eyebrow">NO PIERDAS DE VISTA</p><h2>Próxima actividad</h2></div><span class="live-dot">EN VIVO</span></div>
+            <div id="countdownContent" class="countdown-content"><p class="empty-state">Todavía no tienes actividades pendientes. ¡Agrega la primera!</p></div>
+          </section>
+          <section class="panel quick-add-panel">
+            <div class="panel-heading"><div><p class="eyebrow">PLANIFICA TU TIEMPO</p><h2 id="formTitle">Agregar actividad</h2></div></div>
+            <form id="activityForm" class="activity-form">
+              <div class="form-group"><label for="activityTitle">Nombre de la actividad *</label><input id="activityTitle" name="title" required maxlength="100" placeholder="Ej. Entrega del proyecto"></div>
+              <div class="form-row">
+                <div class="form-group"><label for="activityType">Tipo *</label><select id="activityType" name="type" required><option value="Tarea">Tarea</option><option value="Evaluación">Evaluación</option><option value="Exposición">Exposición</option><option value="Proyecto">Proyecto</option></select></div>
+                <div class="form-group"><label for="activitySubject">Materia *</label><select id="activitySubject" name="subject" required></select></div>
+              </div>
+              <div class="form-group"><label for="activityDue">Fecha y hora de entrega *</label><input type="datetime-local" id="activityDue" name="due" required></div>
+              <div class="form-group"><label for="activityDescription">Descripción (opcional)</label><textarea id="activityDescription" name="description" rows="2" maxlength="500" placeholder="Detalles importantes..."></textarea></div>
+              <div class="form-actions">
+                <button type="submit" id="submitActivity" class="primary-button">＋ Guardar actividad</button>
+                <button type="button" id="cancelEdit" class="secondary-button" hidden>Cancelar</button>
+              </div>
+              <p id="formMessage" class="form-message" aria-live="polite"></p>
+            </form>
+          </section>
+        </div>
+
+        <div class="dashboard-grid lower-grid">
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">LO QUE SIGUE</p><h2>Tareas pendientes</h2></div><button class="text-button" data-view="activities">Ver todas →</button></div>
+            <div id="pendingList" class="activity-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">ORGANIZA TU SEMANA</p><h2>Próximas entregas</h2></div></div>
+            <div id="upcomingList" class="activity-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="activitiesView" class="view">
+        <div class="section-toolbar"><div><h2>Todas las actividades</h2><p>Administra tus tareas, evaluaciones y proyectos.</p></div>
+          <label class="filter-label">Mostrar
+            <select id="activityFilter"><option value="all">Todas</option><option value="pending">Pendientes</option><option value="completed">Completadas</option></select>
+          </label>
+        </div>
+        <div id="allActivitiesList" class="full-activity-list"></div>
+      </section>
+
+      <section id="subjectsView" class="view">
+        <div class="section-toolbar"><div><h2>Mis materias</h2><p>Selecciona una materia para consultar sus actividades asociadas.</p></div></div>
+        <div id="subjectsGrid" class="subjects-grid"></div>
+      </section>
+
+      <section id="subjectDetailView" class="view">
+        <button id="backToSubjects" class="back-button">← Volver a materias</button>
+        <div id="subjectDetail"></div>
+      </section>
+    </main>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
