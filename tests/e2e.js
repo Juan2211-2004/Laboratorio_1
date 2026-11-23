@@ -3,7 +3,12 @@ const { chromium } = require("playwright");
 const BASE = (process.env.E2E_URL || "http://localhost:8099").replace(/\/$/, "");
 const results = [];
 const check = (name, ok) => { results.push(`${ok ? "✅" : "❌"} ${name}`); };
-const local = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+// Valor para <input type="datetime-local">, calculado EN EL NAVEGADOR: su zona horaria
+// (America/Bogota) puede ser distinta de la de Node (UTC en GitHub Actions).
+const local = (page, date) => page.evaluate(ms => {
+  const d = new Date(ms);
+  return new Date(ms - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}, date.getTime());
 
 (async () => {
   const browser = await chromium.launch();
@@ -39,12 +44,12 @@ const local = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISO
   await page.fill("#activityTitle", "Quiz rápido");
   await page.selectOption("#activityType", "Evaluación");
   await page.selectOption("#activitySubject", "2");
-  await page.fill("#activityDue", local(new Date(start.getTime() + 2 * 60000)));
+  await page.fill("#activityDue", await local(page, new Date(start.getTime() + 2 * 60000)));
   await page.click("#submitActivity");
   await page.waitForSelector("#pendingList .activity-item");
   // Actividad a 3 días
   await page.fill("#activityTitle", "Proyecto final");
-  await page.fill("#activityDue", local(new Date(start.getTime() + 3 * 86400000)));
+  await page.fill("#activityDue", await local(page, new Date(start.getTime() + 3 * 86400000)));
   await page.fill("#activityDescription", "<b>no debe ser HTML</b>");
   await page.click("#submitActivity");
   await page.waitForFunction(() => document.querySelectorAll("#pendingList .activity-item").length === 2);

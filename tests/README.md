@@ -53,4 +53,5 @@ node tests/e2e.js
 |---|---|---|
 | `validation.test.js` → "rechaza fecha nula" | `due: null` o `due: 0` se aceptaban y guardaban como 1 de enero de 1970 | La fecha solo se acepta como texto no vacío |
 | `api.test.js` → "cuerpo de más de 20 KB" | Una petición demasiado grande respondía 500 | Ahora responde `413` con un mensaje claro |
+| CI en GitHub (UTC) | La E2E calculaba la hora "local" con la zona horaria de Node y la escribía en un navegador en hora de Bogotá: en un servidor UTC la actividad quedaba 5 horas en el futuro | La hora se calcula dentro del navegador; verificado en UTC, Bogotá y Tokio |
 | Revisión de `e2e.js` | El script terminaba con código 0 aunque fallara un chequeo, y "Datos persisten" siempre pasaba | Sale con código 1 ante cualquier fallo y compara los datos antes y después de recargar |
