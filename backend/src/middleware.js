@@ -29,6 +29,9 @@ function errorHandler(error, req, res, next) {
   if (error.type === "entity.parse.failed") {
     return res.status(400).json({ error: "El cuerpo de la petición no es JSON válido." });
   }
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({ error: "La petición es demasiado grande." });
+  }
   console.error(error);
   res.status(500).json({ error: "Error interno del servidor." });
 }

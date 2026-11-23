@@ -1,6 +1,6 @@
 const { chromium } = require("playwright");
 
-const BASE = "http://localhost:8099";
+const BASE = (process.env.E2E_URL || "http://localhost:8099").replace(/\/$/, "");
 const results = [];
 const check = (name, ok) => { results.push(`${ok ? "✅" : "❌"} ${name}`); };
 const local = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -85,10 +85,17 @@ const local = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISO
   await page.waitForFunction(() => document.querySelectorAll("#subjectDetail .activity-item").length === 0);
   check("Eliminar actividad", true);
 
-  // Persistencia (viene del servidor)
+  // Persistencia: tras recargar, lo que se ve debe venir igual del servidor.
+  const snapshot = () => page.evaluate(() => ({
+    titles: [...document.querySelectorAll("#allActivitiesList .activity-item h3")].map(h => h.textContent).sort(),
+    pending: document.getElementById("pendingCount").textContent,
+    completed: document.getElementById("completedCount").textContent
+  }));
+  const beforeReload = await snapshot();
   await page.reload();
   await page.waitForSelector("#pendingList .activity-item, #pendingList .empty-state");
-  check("Datos persisten tras recargar", (await page.textContent("#completedCount")) === "0" || true);
+  const afterReload = await snapshot();
+  check("Datos persisten tras recargar", JSON.stringify(beforeReload) === JSON.stringify(afterReload) && beforeReload.titles.length > 0);
 
   // Cerrar sesión
   await page.click("#logoutButton");
@@ -102,5 +109,8 @@ const local = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISO
 
   check(`Sin errores en consola (${errors.join(" | ")})`, errors.length === 0);
   console.log(results.join("\n"));
+  const failed = results.filter(r => r.startsWith("❌")).length;
+  console.log(`\n${results.length - failed}/${results.length} pruebas superadas`);
   await browser.close();
+  if (failed) process.exitCode = 1; // el CI marca la ejecución como fallida
 })().catch(e => { console.log(results.join("\n")); console.error("FALLO:", e.message); process.exit(1); });

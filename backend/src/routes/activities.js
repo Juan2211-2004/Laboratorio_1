@@ -1,11 +1,9 @@
 const express = require("express");
 const { pool } = require("../db");
 const { asyncHandler } = require("../middleware");
+const { isUuid, validateActivity } = require("../validation");
 
 const router = express.Router();
-
-const TYPES = ["Tarea", "Evaluación", "Exposición", "Proyecto"];
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Columnas que se devuelven al frontend (con el nombre de la materia incluido).
 const SELECT_ACTIVITY = `
@@ -14,24 +12,6 @@ const SELECT_ACTIVITY = `
          a.subject_id AS "subjectId", s.name AS subject
   FROM activities a
   JOIN subjects s ON s.id = a.subject_id`;
-
-// Valida y normaliza los datos que llegan del formulario.
-function validateActivity(body) {
-  const title = String(body?.title || "").trim();
-  const type = String(body?.type || "");
-  const description = String(body?.description || "").trim();
-  const subjectId = Number(body?.subjectId);
-  const due = new Date(body?.due);
-
-  if (!title) return { error: "El nombre de la actividad es obligatorio." };
-  if (title.length > 100) return { error: "El nombre no puede superar 100 caracteres." };
-  if (!TYPES.includes(type)) return { error: "El tipo de actividad no es válido." };
-  if (!Number.isInteger(subjectId) || subjectId <= 0) return { error: "Selecciona una materia válida." };
-  if (Number.isNaN(due.getTime())) return { error: "La fecha y hora no son válidas." };
-  if (description.length > 500) return { error: "La descripción no puede superar 500 caracteres." };
-
-  return { value: { title, type, description, subjectId, due: due.toISOString() } };
-}
 
 async function subjectExists(subjectId) {
   const { rowCount } = await pool.query("SELECT 1 FROM subjects WHERE id = $1", [subjectId]);
@@ -45,7 +25,7 @@ async function findActivity(id, userId) {
 
 // Rechaza ids mal formados antes de llegar a la base de datos.
 router.param("id", (req, res, next, id) => {
-  if (!UUID_REGEX.test(id)) return res.status(404).json({ error: "Actividad no encontrada." });
+  if (!isUuid(id)) return res.status(404).json({ error: "Actividad no encontrada." });
   next();
 });
 

@@ -1,0 +1,71 @@
+# Integración continua de AcademicHub.
+# En cada push y pull request: pruebas unitarias, luego el sistema completo con Docker
+# (PostgreSQL + API + Nginx) y sobre él las pruebas de base de datos, API y navegador.
+name: Pruebas
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unitarias:
+    name: Unitarias (backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validación y contraseñas (node:test)
+        working-directory: backend
+        run: npm test
+
+  integracion:
+    name: Integración (Docker)
+    needs: unitarias
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      API_URL: http://localhost:8080
+      E2E_URL: http://localhost:8080
+      JWT_SECRET: secreto-solo-para-ci-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Preparar .env
+        run: |
+          cp .env.example .env
+          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" .env
+
+      - name: Levantar db, backend y frontend
+        run: docker compose up -d --build --wait --wait-timeout 120
+
+      - name: init.sql es idempotente
+        run: docker compose exec -T db psql -v ON_ERROR_STOP=1 -q -U academichub -d academichub < db/init.sql
+
+      - name: Restricciones de la base de datos
+        run: docker compose exec -T db psql -v ON_ERROR_STOP=1 -U academichub -d academichub < tests/db-constraints.sql
+
+      - name: API REST (caja negra)
+        run: node --test --test-reporter=spec tests/api.test.js
+
+      - name: Instalar Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+
+      - name: Navegador de punta a punta (E2E)
+        run: node tests/e2e.js
+
+      - name: Logs si algo falla
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Apagar
+        if: always()
+        run: docker compose down -v

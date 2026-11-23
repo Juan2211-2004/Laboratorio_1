@@ -36,6 +36,14 @@ docker compose exec db psql -U academichub -d academichub   # consola SQL
 > `db/init.sql` solo se ejecuta cuando el volumen de la base de datos está vacío.
 > Si cambias el esquema, usa `docker compose down -v` para recrearlo.
 
+## Pruebas
+
+96 pruebas automatizadas en 4 niveles (unitarias, base de datos, API y navegador), que corren en GitHub Actions en cada push. Detalle y comandos en [`tests/README.md`](tests/README.md).
+
+```bash
+cd backend && npm test        # unitarias, sin Docker ni npm install
+```
+
 ## API REST
 
 Todas las rutas, excepto `login` y `health`, requieren la cabecera `Authorization: Bearer <token>`.
