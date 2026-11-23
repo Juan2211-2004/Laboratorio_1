@@ -1,5 +1,7 @@
 # 🎓 AcademicHub
 
+*[Read in English](README.en.md)*
+
 Plataforma para organizar tareas, evaluaciones, exposiciones y proyectos por materia.
 
 | Capa | Tecnología | Carpeta |
