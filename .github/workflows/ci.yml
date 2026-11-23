@@ -95,10 +95,10 @@ jobs:
 
       - name: Construir y publicar backend
         run: |
-          docker build -t "$IMAGE_PREFIX-backend:${GITHUB_SHA::7}" -t "$IMAGE_PREFIX-backend:latest" backend
+          docker build --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" -t "$IMAGE_PREFIX-backend:${GITHUB_SHA::7}" -t "$IMAGE_PREFIX-backend:latest" backend
           docker push --all-tags "$IMAGE_PREFIX-backend"
 
       - name: Construir y publicar frontend
         run: |
-          docker build -f frontend/Dockerfile -t "$IMAGE_PREFIX-frontend:${GITHUB_SHA::7}" -t "$IMAGE_PREFIX-frontend:latest" .
+          docker build --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" -f frontend/Dockerfile -t "$IMAGE_PREFIX-frontend:${GITHUB_SHA::7}" -t "$IMAGE_PREFIX-frontend:latest" .
           docker push --all-tags "$IMAGE_PREFIX-frontend"
